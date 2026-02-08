@@ -72,7 +72,7 @@ jobs:
             fi
 
             # Copy new files (excluding .env to preserve existing)
-            sudo rsync -av --delete --exclude='.env' --delete-excluded "$TEMP_DIR"/. ./
+            sudo rsync -av --delete --filter='P .env' "$TEMP_DIR"/. ./
             rm -rf "$TEMP_DIR"
             
             # Validate
