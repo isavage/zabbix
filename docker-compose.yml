@@ -29,8 +29,7 @@ services:
     volumes:
       - zabbix_alertscripts:/usr/lib/zabbix/alertscripts
       - zabbix_export:/var/lib/zabbix/export
-    networks:
-      - zabbix.net
+    network_mode: host
 
   zabbix-web:
     image: zabbix/zabbix-web-nginx-pgsql:ubuntu-6.0-latest
