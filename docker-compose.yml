@@ -59,6 +59,7 @@ services:
     environment:
       ZBX_HOSTNAME: ${ZBX_HOSTNAME}
       ZBX_SERVER_HOST: zabbix-server
+      ZBX_LISTENIP: ${ZBX_AGENT_IP}
     network_mode: host
     privileged: true
     volumes:
