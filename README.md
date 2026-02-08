@@ -22,7 +22,7 @@ Sensitive information is stored in the `.env` file. Update it as needed.
 
 ## Nginx Reverse Proxy
 
-To access the Zabbix web UI via server.varunrs.in using your Nginx reverse proxy container:
+To access the Zabbix web UI via your_domain using your Nginx reverse proxy container:
 
 1. Ensure your Nginx container uses the `zabbix-net` network as an external network.
 2. Add the following server block to your Nginx config:
@@ -30,7 +30,7 @@ To access the Zabbix web UI via server.varunrs.in using your Nginx reverse proxy
 ```
 server {
     listen 80;
-    server_name server.varunrs.in;
+    server_name your_domain;
 
     location / {
         proxy_pass http://zabbix-web:8080;
