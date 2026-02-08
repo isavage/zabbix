@@ -1,0 +1,93 @@
+name: Deploy Zabbix
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'prod-IN'
+        type: choice
+        options:
+        - prod-IN
+      cleanup:
+        description: 'Clean up persistent directories before deploying'
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Upload files to temporary directory on VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: 22
+          source: ".,!.git*,!.github*,!.gitignore,.env"
+          target: "/tmp/zabbix-deploy-temp"
+          strip_components: 0
+          overwrite: true
+
+      - name: Cleanup, move files, and finalize deployment
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: 22
+          script: |
+            set -e
+
+            TARGET_DIR="/docker/zabbix"
+            TEMP_DIR="/tmp/zabbix-deploy-temp"
+
+            # Stop existing
+            if [ -d "$TARGET_DIR" ]; then
+                cd "$TARGET_DIR"
+                docker compose down || true
+            fi
+
+            mkdir -p "$TARGET_DIR"
+            cd "$TARGET_DIR"
+
+            # Optional cleanup: wipe everything except .env
+            if [[ "${{ inputs.cleanup }}" == "true" ]]; then
+              echo "🧹 Cleaning up persistent directories (keeping .env)..."
+              find . -mindepth 1 -not -path './.env' -delete
+            fi
+
+            # Copy new files (excluding .env to preserve existing)
+            sudo rsync -av --delete --exclude='.env' "$TEMP_DIR"/. ./
+            rm -rf "$TEMP_DIR"
+            
+            # Validate
+            if [ ! -f .env ]; then
+              echo "❌ .env file missing!"
+              exit 1
+            fi
+            
+            # Start Docker Compose
+            docker compose up -d --build
+
+            sleep 15
+
+            # Verify
+            if docker compose ps | grep -q "Up"; then
+                echo "✅ Deployment successful!"
+            else
+                echo "❌ Failed!"
+                docker compose logs
+                exit 1
+            fi
