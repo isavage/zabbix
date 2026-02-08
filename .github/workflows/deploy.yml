@@ -66,10 +66,13 @@ jobs:
             if [[ "${{ inputs.cleanup }}" == "true" ]]; then
               echo "🧹 Cleaning up persistent directories (keeping .env)..."
               find . -mindepth 1 -not -path './.env' -delete
+              echo "🗑️ Removing Docker volumes and pruning..."
+              docker volume rm zabbix_postgres_data zabbix_zabbix_alertscripts zabbix_zabbix_export 2>/dev/null || true
+              docker volume prune -f
             fi
 
             # Copy new files (excluding .env to preserve existing)
-            sudo rsync -av --exclude='.env' "$TEMP_DIR"/. ./
+            sudo rsync -av --delete --exclude='.env' --delete-excluded "$TEMP_DIR"/. ./
             rm -rf "$TEMP_DIR"
             
             # Validate
