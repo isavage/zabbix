@@ -21,7 +21,7 @@ services:
     depends_on:
       - postgres-server
     environment:
-      DB_SERVER_HOST: host.docker.internal
+      DB_SERVER_HOST: postgres-server
       DB_SERVER_PORT: 5432
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
@@ -29,7 +29,8 @@ services:
     volumes:
       - zabbix_alertscripts:/usr/lib/zabbix/alertscripts
       - zabbix_export:/var/lib/zabbix/export
-    network_mode: host
+    networks:
+      - zabbix.net
 
   zabbix-web:
     image: zabbix/zabbix-web-nginx-pgsql:ubuntu-6.0-latest
@@ -44,7 +45,7 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      ZBX_SERVER_HOST: host.docker.internal
+      ZBX_SERVER_HOST: zabbix-server
       PHP_TZ: ${PHP_TZ}
     networks:
       - zabbix.net
